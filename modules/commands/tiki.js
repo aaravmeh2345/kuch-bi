@@ -1,74 +1,43 @@
 module.exports.config = {
-	name: "tiki",
-	version: "1.0.1",
-	hasPermssion: 0,
-	credits: "SEN",//hmmmmm
-	description: "Write words on the board \_(ツ)_/¯",
-	commandCategory: "Tools",
-	usages: "tiki [text]",
-	cooldowns: 10,
-	dependencies: {
-		"canvas":"",
-		 "axios":"",
-		 "fs-extra":""
-	}
-};
-
-module.exports.wrapText = (ctx, text, maxWidth) => {
-	return new Promise(resolve => {
-		if (ctx.measureText(text).width < maxWidth) return resolve([text]);
-		if (ctx.measureText('W').width > maxWidth) return resolve(null);
-		const words = text.split(' ');
-		const lines = [];
-		let line = '';
-		while (words.length > 0) {
-			let split = false;
-			while (ctx.measureText(words[0]).width >= maxWidth) {
-				const temp = words[0];
-				words[0] = temp.slice(0, -1);
-				if (split) words[1] = `${temp.slice(-1)}${words[1]}`;
-				else {
-					split = true;
-					words.splice(1, 0, temp.slice(-1));
-				}
-			}
-			if (ctx.measureText(`${line}${words[0]}`).width < maxWidth) line += `${words.shift()} `;
-			else {
-				lines.push(line.trim());
-				line = '';
-			}
-			if (words.length === 0) lines.push(line.trim());
-		}
-		return resolve(lines);
-	});
-} 
-
-module.exports.run = async function({ api, event, args }) {
-	let { senderID, threadID, messageID } = event;
-	const { loadImage, createCanvas } = require("canvas");
-	const fs = global.nodemodule["fs-extra"];
-	const axios = global.nodemodule["axios"];
-	let pathImg = __dirname + '/cache/tiki.png';
-	var text = args.join(" ");
-	if (!text) return api.sendMessage("Nhập nội dung", threadID, messageID);
-	let getPorn = (await axios.get(`https://imgur.com/nqUIi2S.png`, { responseType: 'arraybuffer' })).data;
-	fs.writeFileSync(pathImg, Buffer.from(getPorn, 'utf-8'));
-	let baseImage = await loadImage(pathImg);
-	let canvas = createCanvas(baseImage.width, baseImage.height);
-	let ctx = canvas.getContext("2d");
-	ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-	ctx.font = "200 50px Gabriele";
-	ctx.fillStyle = "#FFCC33";
-	ctx.textAlign = "start";
-	let fontSize = 45;
-	while (ctx.measureText(text).width > 2600) {
-		fontSize--;
-		ctx.font = `400 ${fontSize}px Gabriele, sans-serif`;
-	}
-	const lines = await this.wrapText(ctx, text, 900);
-	ctx.fillText(lines.join('\n'), 625,430);//comment
-	ctx.beginPath();
-	const imageBuffer = canvas.toBuffer();
-	fs.writeFileSync(pathImg, imageBuffer);
-return api.sendMessage({ attachment: fs.createReadStream(pathImg) }, threadID, () => fs.unlinkSync(pathImg), messageID);        
+  name: "match", 
+  version: "1.0.1",
+  hasPermssion: 0,
+  credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
+  description: "See the match ratio between 2 people",
+  commandCategory: "Game",
+  usages: "[tag]",
+  cooldowns: 5,
+  dependencies: {
+      "fs-extra": "",
+      "axios": ""
+  }
 }
+
+module.exports.run = async function({ api, args, Users, event}) {
+  const axios = global.nodemodule["axios"];
+const request = global.nodemodule["request"];
+const fs = global.nodemodule["fs-extra"];
+  var mention = Object.keys(event.mentions)[0];
+  if(!mention) return api.sendMessage("Need to tag 1 friend you want to see the matching ratio", event.threadID);
+  var name = (await Users.getData(mention)).name
+  var namee = (await Users.getData(event.senderID)).name
+  var tle = Math.floor(Math.random() * 101);
+
+  var arraytag = [];
+      arraytag.push({id: mention, tag: name});
+      arraytag.push({id: event.senderID, tag: namee});
+  var mentions = Object.keys(event.mentions)
+
+      let Avatar = (await axios.get( `https://graph.facebook.com/${mentions}/picture?height=720&width=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: "arraybuffer" } )).data; 
+          fs.writeFileSync( __dirname + "/cache/avt.png", Buffer.from(Avatar, "utf-8") );
+      let Avatar2 = (await axios.get( `https://graph.facebook.com/${event.senderID}/picture?height=720&width=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: "arraybuffer" } )).data;
+          fs.writeFileSync( __dirname + "/cache/avt2.png", Buffer.from(Avatar2, "utf-8") );        
+
+
+     var imglove = [];
+
+            imglove.push(fs.createReadStream(__dirname + "/cache/avt2.png"));
+            imglove.push(fs.createReadStream(__dirname + "/cache/avt.png"));
+      var msg = {body: `⚡️The love Couple ${namee} and ${name} is ${tle}% 🥰`, mentions: arraytag, attachment: imglove}
+      return api.sendMessage(msg, event.threadID, event.messageID)
+    }
